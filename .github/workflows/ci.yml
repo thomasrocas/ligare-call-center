@@ -17,6 +17,6 @@ jobs:
       - name: Install web deps
         run: cd apps/web && npm ci
       - name: API tests
-        run: cd apps/api && ./mvnw -q test
+        run: cd apps/api && mvn -q test
       - name: Web tests
         run: cd apps/web && npm run test
