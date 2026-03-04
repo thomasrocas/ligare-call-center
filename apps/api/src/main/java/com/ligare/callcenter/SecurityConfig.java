@@ -32,6 +32,10 @@ public class SecurityConfig {
       .authorizeHttpRequests(auth -> auth
         .requestMatchers("/health").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
+        .requestMatchers("/api/admin/**").hasAnyRole("OWNER", "ADMIN")
+        .requestMatchers("/api/supervisor/**").hasAnyRole("OWNER", "ADMIN", "SUPERVISOR")
+        .requestMatchers("/api/agent/**").hasAnyRole("OWNER", "ADMIN", "SUPERVISOR", "AGENT")
+        .requestMatchers("/api/auditor/**").hasAnyRole("OWNER", "ADMIN", "AUDITOR")
         .anyRequest().authenticated()
       )
       .addFilterBefore(devFilter, UsernamePasswordAuthenticationFilter.class);
