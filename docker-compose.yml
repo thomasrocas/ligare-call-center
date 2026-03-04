@@ -1,0 +1,31 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ligare
+      POSTGRES_PASSWORD: ligare
+      POSTGRES_DB: ligare_call_center
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  api:
+    build: ./apps/api
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/ligare_call_center
+      DB_USER: ligare
+      DB_PASSWORD: ligare
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+  web:
+    build: ./apps/web
+    depends_on:
+      - api
+    ports:
+      - "5174:5173"
+volumes:
+  pgdata:
