@@ -1,7 +1,10 @@
 process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = 'file:./test.db';
+process.env.JWT_SECRET = 'ligare-dev-secret-change-in-production';
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { app } from '../server';
 
@@ -27,14 +30,17 @@ async function req(method: string, path: string, token?: string, body?: any) {
 }
 
 beforeAll(async () => {
-  // Clean patients table
+  // Clean tables
   await prisma.patient.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.call.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.category.deleteMany();
 
-  // Get existing users for tokens
-  const owner = await prisma.user.findFirst({ where: { role: 'OWNER' } });
-  const agent = await prisma.user.findFirst({ where: { role: 'AGENT' } });
-
-  if (!owner || !agent) throw new Error('Seed the database first');
+  // Seed test users
+  const hash = await bcrypt.hash('password123', 10);
+  const owner = await prisma.user.create({ data: { email: 'owner-pt@test.com', password: hash, name: 'Test Owner', role: 'OWNER', team: 'HH' } });
+  const agent = await prisma.user.create({ data: { email: 'agent-pt@test.com', password: hash, name: 'Test Agent', role: 'AGENT', team: 'HH' } });
 
   ownerToken = jwt.sign(
     { id: owner.id, email: owner.email, name: owner.name, role: owner.role, team: owner.team },

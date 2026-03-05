@@ -8,6 +8,9 @@ import { CallsPage } from './pages/calls';
 import { DashboardPage } from './pages/dashboard';
 import { AdminUsersPage } from './pages/admin-users';
 import { AdminCategoriesPage } from './pages/admin-categories';
+import { PatientsPage } from './pages/patients';
+import { PatientDetailPage } from './pages/patient-detail';
+import { PatientImportPage } from './pages/patient-import';
 import { hasPermission } from '@ligare/shared';
 import './index.css';
 
@@ -37,6 +40,9 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/calls" replace />} />
         <Route path="calls" element={<CallsPage />} />
+        <Route path="patients" element={<PatientsPage />} />
+        <Route path="patients/import" element={<PermissionRoute permission="users:manage"><PatientImportPage /></PermissionRoute>} />
+        <Route path="patients/:id" element={<PatientDetailPage />} />
         <Route path="dashboard" element={<PermissionRoute permission="dashboard:view"><DashboardPage /></PermissionRoute>} />
         <Route path="admin/users" element={<PermissionRoute permission="users:manage"><AdminUsersPage /></PermissionRoute>} />
         <Route path="admin/categories" element={<PermissionRoute permission="categories:manage"><AdminCategoriesPage /></PermissionRoute>} />

@@ -5,6 +5,7 @@ import { hasPermission, type Permission } from '@ligare/shared';
 
 const navItems: { label: string; path: string; permission?: Permission }[] = [
   { label: '📞 Calls', path: '/calls', permission: 'calls:read' },
+  { label: '🏥 Patients', path: '/patients', permission: 'calls:read' },
   { label: '📊 Dashboard', path: '/dashboard', permission: 'dashboard:view' },
   { label: '👥 Users', path: '/admin/users', permission: 'users:manage' },
   { label: '🏷️ Categories', path: '/admin/categories', permission: 'categories:manage' },

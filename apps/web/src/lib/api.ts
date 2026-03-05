@@ -133,6 +133,35 @@ class ApiClient {
     return this.request<any>(`/users/${id}`, { method: 'DELETE' });
   }
 
+  // Patients
+  async getPatients(params?: Record<string, string>) {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request<{ data: any[]; total: number; page: number; limit: number }>(`/patients${qs}`);
+  }
+
+  async getPatient(id: string) {
+    return this.request<any>(`/patients/${id}`);
+  }
+
+  async createPatient(data: any) {
+    return this.request<any>('/patients', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async updatePatient(id: string, data: any) {
+    return this.request<any>(`/patients/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
+  }
+
+  async lookupPatientByPhone(phone: string) {
+    return this.request<any[]>(`/patients/lookup/${encodeURIComponent(phone)}`);
+  }
+
+  async importPatients(patients: any[]) {
+    return this.request<{ total: number; created: number; updated: number; skipped: number; errors: any[] }>(
+      '/patients/import',
+      { method: 'POST', body: JSON.stringify({ patients }) }
+    );
+  }
+
   // Categories
   async getCategories() {
     return this.request<any[]>('/categories');
