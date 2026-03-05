@@ -1,31 +1,30 @@
-version: '3.9'
+version: '3.8'
+
 services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: ligare
-      POSTGRES_PASSWORD: ligare
-      POSTGRES_DB: ligare_call_center
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
   api:
-    build: ./apps/api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
     environment:
-      SPRING_PROFILES_ACTIVE: dev
-      DB_URL: jdbc:postgresql://postgres:5432/ligare_call_center
-      DB_USER: ligare
-      DB_PASSWORD: ligare
-    depends_on:
-      - postgres
+      - DATABASE_URL=file:/data/ligare.db
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - NODE_ENV=production
+      - PORT=3001
+    volumes:
+      - api-data:/data
     ports:
-      - "8080:8080"
+      - "3001:3001"
+    restart: unless-stopped
+
   web:
-    build: ./apps/web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "80:80"
     depends_on:
       - api
-    ports:
-      - "5174:5173"
+    restart: unless-stopped
+
 volumes:
-  pgdata:
+  api-data:

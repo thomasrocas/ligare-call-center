@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("AGENT")
+  team      String   @default("HH")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  calls         Call[]     @relation("AgentCalls")
+  transferredTo Call[]     @relation("TransferCalls")
+  auditLogs     AuditLog[]
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  active      Boolean @default(true)
+
+  calls Call[]
+}
+
+model Call {
+  id            String   @id @default(cuid())
+  callerName    String
+  callerPhone   String
+  categoryId    String
+  priority      String   @default("MEDIUM")
+  status        String   @default("QUEUED")
+  team          String
+  agentId       String
+  notes         String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  duration      Int?
+  transferredToId String?
+  transferNotes String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category      Category @relation(fields: [categoryId], references: [id])
+  agent         User     @relation("AgentCalls", fields: [agentId], references: [id])
+  transferredTo User?    @relation("TransferCalls", fields: [transferredToId], references: [id])
+  auditLogs     AuditLog[]
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  callId    String?
+  userId    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  call Call? @relation(fields: [callId], references: [id])
+  user User  @relation(fields: [userId], references: [id])
+}
