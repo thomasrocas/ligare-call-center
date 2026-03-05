@@ -1,5 +1,4 @@
-// Set env BEFORE any imports so the server's Prisma client uses test.db
-// Note: .env is loaded by Prisma and may override these, so we use the same values
+// Set env BEFORE any imports
 process.env.NODE_ENV = 'test';
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
