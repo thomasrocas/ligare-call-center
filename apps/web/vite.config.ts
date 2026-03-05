@@ -7,18 +7,6 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
-  build: {
-    target: 'es2022',
-    rollupOptions: {
-      onwarn(warning, warn) {
-        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
-        warn(warning);
-      },
-    },
-  },
-  optimizeDeps: {
-    include: ['recharts', 'react', 'react-dom', 'react-router-dom'],
-  },
   server: {
     port: 5173,
     proxy: {

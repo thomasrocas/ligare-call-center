@@ -2,7 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Select } from '../components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar, Pie } from 'react-chartjs-2';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -25,9 +36,17 @@ export function DashboardPage() {
     return <div className="text-center py-12 text-zinc-400">Loading dashboard...</div>;
   }
 
-  const statusData = Object.entries(kpis.callsByStatus).map(([name, value]) => ({ name, value }));
-  const priorityData = Object.entries(kpis.callsByPriority).map(([name, value]) => ({ name, value }));
-  const categoryData = Object.entries(kpis.callsByCategory).map(([name, value]) => ({ name, value }));
+  const statusLabels = Object.keys(kpis.callsByStatus);
+  const statusValues = Object.values(kpis.callsByStatus) as number[];
+
+  const priorityLabels = Object.keys(kpis.callsByPriority);
+  const priorityValues = Object.values(kpis.callsByPriority) as number[];
+
+  const categoryLabels = Object.keys(kpis.callsByCategory);
+  const categoryValues = Object.values(kpis.callsByCategory) as number[];
+
+  const hourLabels = kpis.callsByHour.map((h: any) => `${h.hour}:00`);
+  const hourValues = kpis.callsByHour.map((h: any) => h.count);
 
   return (
     <div className="space-y-6">
@@ -54,29 +73,38 @@ export function DashboardPage() {
         <Card>
           <CardHeader><CardTitle>Calls by Hour</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={kpis.callsByHour}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" tickFormatter={(h) => `${h}:00`} />
-                <YAxis allowDecimals={false} />
-                <Tooltip labelFormatter={(h) => `${h}:00`} />
-                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <Bar
+              data={{
+                labels: hourLabels,
+                datasets: [{
+                  label: 'Calls',
+                  data: hourValues,
+                  backgroundColor: '#3b82f6',
+                  borderRadius: 4,
+                }],
+              }}
+              options={{
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+              }}
+            />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader><CardTitle>Calls by Status</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie data={statusData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <Pie
+              data={{
+                labels: statusLabels,
+                datasets: [{
+                  data: statusValues,
+                  backgroundColor: COLORS.slice(0, statusLabels.length),
+                }],
+              }}
+              options={{ responsive: true }}
+            />
           </CardContent>
         </Card>
       </div>
@@ -86,30 +114,39 @@ export function DashboardPage() {
         <Card>
           <CardHeader><CardTitle>Calls by Priority</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={priorityData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={80} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#f59e0b" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <Bar
+              data={{
+                labels: priorityLabels,
+                datasets: [{
+                  label: 'Calls',
+                  data: priorityValues,
+                  backgroundColor: '#f59e0b',
+                  borderRadius: 4,
+                }],
+              }}
+              options={{
+                indexAxis: 'y' as const,
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
+              }}
+            />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader><CardTitle>Calls by Category</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={categoryData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
-                  {categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <Pie
+              data={{
+                labels: categoryLabels,
+                datasets: [{
+                  data: categoryValues,
+                  backgroundColor: COLORS.slice(0, categoryLabels.length),
+                }],
+              }}
+              options={{ responsive: true }}
+            />
           </CardContent>
         </Card>
       </div>
