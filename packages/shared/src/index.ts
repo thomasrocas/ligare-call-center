@@ -14,6 +14,27 @@ export type CallStatus = (typeof CALL_STATUSES)[number];
 export const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
+// ── Patient ──
+export interface Patient {
+  id: string;
+  mrn: string;
+  firstName: string;
+  lastName: string;
+  dob?: string;
+  phone: string;
+  phoneAlt?: string;
+  email?: string;
+  preferredLanguage: string;
+  insuranceProvider?: string;
+  insuranceId?: string;
+  notes?: string;
+  tags: string[];
+  active: boolean;
+  callCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ── Category ──
 export interface Category {
   id: string;
@@ -41,12 +62,21 @@ export interface Call {
   callerPhone: string;
   categoryId: string;
   categoryName?: string;
+  patientId?: string;
+  patient?: Patient;
   priority: Priority;
   status: CallStatus;
   team: Team;
   agentId: string;
   agentName?: string;
   notes?: string;
+  reason?: string;
+  disposition?: string;
+  dispositionTemplate?: string;
+  followUpDate?: string;
+  followUpAssignedTo?: string;
+  hipaaAcknowledged: boolean;
+  recordingConsent: boolean;
   startedAt?: string;
   completedAt?: string;
   duration?: number; // seconds

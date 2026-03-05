@@ -20,7 +20,29 @@ model User {
 
   calls         Call[]     @relation("AgentCalls")
   transferredTo Call[]     @relation("TransferCalls")
+  followUps     Call[]     @relation("FollowUpCalls")
   auditLogs     AuditLog[]
+}
+
+model Patient {
+  id                String   @id @default(cuid())
+  mrn               String   @unique
+  firstName         String
+  lastName          String
+  dob               DateTime?
+  phone             String
+  phoneAlt          String?
+  email             String?
+  preferredLanguage String   @default("en")
+  insuranceProvider String?
+  insuranceId       String?
+  notes             String?
+  tags              String   @default("[]") // JSON array stored as string (SQLite)
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  calls Call[]
 }
 
 model Category {
@@ -33,26 +55,36 @@ model Category {
 }
 
 model Call {
-  id            String   @id @default(cuid())
-  callerName    String
-  callerPhone   String
-  categoryId    String
-  priority      String   @default("MEDIUM")
-  status        String   @default("QUEUED")
-  team          String
-  agentId       String
-  notes         String?
-  startedAt     DateTime?
-  completedAt   DateTime?
-  duration      Int?
-  transferredToId String?
-  transferNotes String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  callerName          String
+  callerPhone         String
+  categoryId          String
+  patientId           String?
+  priority            String    @default("MEDIUM")
+  status              String    @default("QUEUED")
+  team                String
+  agentId             String
+  notes               String?
+  reason              String?
+  disposition         String?
+  dispositionTemplate String?
+  followUpDate        DateTime?
+  followUpAssignedTo  String?
+  hipaaAcknowledged   Boolean   @default(false)
+  recordingConsent    Boolean   @default(false)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  duration            Int?
+  transferredToId     String?
+  transferNotes       String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  category      Category @relation(fields: [categoryId], references: [id])
-  agent         User     @relation("AgentCalls", fields: [agentId], references: [id])
-  transferredTo User?    @relation("TransferCalls", fields: [transferredToId], references: [id])
+  category      Category  @relation(fields: [categoryId], references: [id])
+  agent         User      @relation("AgentCalls", fields: [agentId], references: [id])
+  transferredTo User?     @relation("TransferCalls", fields: [transferredToId], references: [id])
+  followUpAgent User?     @relation("FollowUpCalls", fields: [followUpAssignedTo], references: [id])
+  patient       Patient?  @relation(fields: [patientId], references: [id])
   auditLogs     AuditLog[]
 }
 

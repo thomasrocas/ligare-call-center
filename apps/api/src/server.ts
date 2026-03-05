@@ -6,6 +6,7 @@ import { dashboardRouter } from './routes/dashboard';
 import { exportsRouter } from './routes/exports';
 import { usersRouter } from './routes/users';
 import { categoriesRouter } from './routes/categories';
+import { patientsRouter } from './routes/patients';
 import { errorHandler } from './middleware/error';
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/dashboard', dashboardRouter);
 app.use('/api/exports', exportsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/categories', categoriesRouter);
+app.use('/api/patients', patientsRouter);
 
 // Error handler
 app.use(errorHandler);
