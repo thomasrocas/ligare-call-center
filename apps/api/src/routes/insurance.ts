@@ -117,7 +117,7 @@ insuranceRouter.get('/providers', requirePermission('calls:read'), async (_req: 
 // GET /api/insurance/patient/:patientId — get patient's insurance status
 insuranceRouter.get('/patient/:patientId', requirePermission('calls:read'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { patientId } = req.params;
+    const patientId = req.params['patientId'] as string;
     const patient = await prisma.patient.findUnique({
       where: { id: patientId },
       select: {

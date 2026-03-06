@@ -9,7 +9,7 @@ scriptsRouter.use(authenticate);
 // GET /api/scripts — list active scripts
 scriptsRouter.get('/', requirePermission('scripts:read'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const category = req.query.category as string | undefined;
+    const category = req.query['category'] as string | undefined;
     const where: any = { active: true };
     if (category) where.category = category;
 
@@ -38,7 +38,8 @@ scriptsRouter.get('/all', requirePermission('scripts:manage'), async (_req: Requ
 // GET /api/scripts/:id
 scriptsRouter.get('/:id', requirePermission('scripts:read'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const script = await prisma.callScript.findUnique({ where: { id: req.params.id } });
+    const id = req.params['id'] as string;
+    const script = await prisma.callScript.findUnique({ where: { id } });
     if (!script) {
       res.status(404).json({ error: 'Not Found', message: 'Call script not found', statusCode: 404 });
       return;
@@ -69,9 +70,10 @@ scriptsRouter.post('/', requirePermission('scripts:manage'), async (req: Request
 // PATCH /api/scripts/:id — update
 scriptsRouter.patch('/:id', requirePermission('scripts:manage'), async (req: Request, res: Response): Promise<void> => {
   try {
+    const id = req.params['id'] as string;
     const { name, category, content, active } = req.body;
     const script = await prisma.callScript.update({
-      where: { id: req.params.id },
+      where: { id },
       data: { name, category, content, active },
     });
     res.json(script);
@@ -87,8 +89,9 @@ scriptsRouter.patch('/:id', requirePermission('scripts:manage'), async (req: Req
 // DELETE /api/scripts/:id — soft delete
 scriptsRouter.delete('/:id', requirePermission('scripts:manage'), async (req: Request, res: Response): Promise<void> => {
   try {
+    const id = req.params['id'] as string;
     await prisma.callScript.update({
-      where: { id: req.params.id },
+      where: { id },
       data: { active: false },
     });
     res.status(204).send();

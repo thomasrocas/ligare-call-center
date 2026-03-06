@@ -10,6 +10,8 @@ services:
       - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
       - NODE_ENV=production
       - PORT=3001
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-change-encryption-key-in-production}
+      - UPLOAD_DIR=/data/uploads
     volumes:
       - api-data:/data
     ports:

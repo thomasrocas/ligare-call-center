@@ -65,7 +65,8 @@ filesRouter.post(
         return;
       }
 
-      const { callId, patientId } = req.body;
+      const callId = req.body.callId as string | undefined;
+      const patientId = req.body.patientId as string | undefined;
 
       // Validate callId/patientId if provided
       if (callId) {
@@ -100,14 +101,14 @@ filesRouter.post(
         include: {
           uploader: { select: { id: true, name: true } },
         },
-      });
+      }) as any;
 
       await logAudit(
         'FILE_UPLOADED',
         req.user!.id,
-        callId || undefined,
+        callId,
         `File uploaded: ${req.file.originalname} (${req.file.size} bytes)`,
-        patientId || undefined
+        patientId
       );
 
       res.status(201).json({
@@ -142,8 +143,8 @@ filesRouter.post(
 // GET /api/files — list files with optional filters
 filesRouter.get('/', requirePermission('files:read'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const callId = req.query.callId as string | undefined;
-    const patientId = req.query.patientId as string | undefined;
+    const callId = req.query['callId'] as string | undefined;
+    const patientId = req.query['patientId'] as string | undefined;
 
     const where: any = {};
     if (callId) where.callId = callId;
@@ -153,9 +154,9 @@ filesRouter.get('/', requirePermission('files:read'), async (req: Request, res: 
       where,
       include: { uploader: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'desc' },
-    });
+    }) as any[];
 
-    res.json(files.map(f => ({
+    res.json(files.map((f: any) => ({
       id: f.id,
       filename: f.filename,
       originalName: f.originalName,
@@ -175,7 +176,8 @@ filesRouter.get('/', requirePermission('files:read'), async (req: Request, res: 
 // GET /api/files/:id/download — download a file
 filesRouter.get('/:id/download', requirePermission('files:read'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const file = await prisma.fileAttachment.findUnique({ where: { id: req.params.id } });
+    const id = req.params['id'] as string;
+    const file = await prisma.fileAttachment.findUnique({ where: { id } });
     if (!file) {
       res.status(404).json({ error: 'Not Found', message: 'File not found', statusCode: 404 });
       return;
@@ -200,10 +202,11 @@ filesRouter.get('/:id/download', requirePermission('files:read'), async (req: Re
 // GET /api/files/:id — file metadata
 filesRouter.get('/:id', requirePermission('files:read'), async (req: Request, res: Response): Promise<void> => {
   try {
+    const id = req.params['id'] as string;
     const file = await prisma.fileAttachment.findUnique({
-      where: { id: req.params.id },
+      where: { id },
       include: { uploader: { select: { id: true, name: true } } },
-    });
+    }) as any;
     if (!file) {
       res.status(404).json({ error: 'Not Found', message: 'File not found', statusCode: 404 });
       return;
@@ -228,7 +231,8 @@ filesRouter.get('/:id', requirePermission('files:read'), async (req: Request, re
 // DELETE /api/files/:id — delete file
 filesRouter.delete('/:id', requirePermission('files:upload'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const file = await prisma.fileAttachment.findUnique({ where: { id: req.params.id } });
+    const id = req.params['id'] as string;
+    const file = await prisma.fileAttachment.findUnique({ where: { id } });
     if (!file) {
       res.status(404).json({ error: 'Not Found', message: 'File not found', statusCode: 404 });
       return;
@@ -240,7 +244,7 @@ filesRouter.delete('/:id', requirePermission('files:upload'), async (req: Reques
       return;
     }
 
-    await prisma.fileAttachment.delete({ where: { id: req.params.id } });
+    await prisma.fileAttachment.delete({ where: { id } });
 
     // Remove from disk
     if (fs.existsSync(file.path)) {

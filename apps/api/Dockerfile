@@ -21,5 +21,7 @@ FROM node:22-slim
 WORKDIR /app
 COPY --from=base /app .
 ENV NODE_ENV=production
+# Create upload directory
+RUN mkdir -p /data/uploads
 EXPOSE 3001
-CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && node dist/server.js"]
+CMD ["sh", "-c", "mkdir -p /data/uploads && cd apps/api && npx prisma migrate deploy && node dist/server.js"]

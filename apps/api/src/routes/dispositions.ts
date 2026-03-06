@@ -34,7 +34,8 @@ dispositionsRouter.get('/all', requirePermission('dispositions:manage'), async (
 // GET /api/dispositions/:id
 dispositionsRouter.get('/:id', requirePermission('dispositions:read'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const template = await prisma.dispositionTemplate.findUnique({ where: { id: req.params.id } });
+    const id = req.params['id'] as string;
+    const template = await prisma.dispositionTemplate.findUnique({ where: { id } });
     if (!template) {
       res.status(404).json({ error: 'Not Found', message: 'Disposition template not found', statusCode: 404 });
       return;
@@ -69,9 +70,10 @@ dispositionsRouter.post('/', requirePermission('dispositions:manage'), async (re
 // PATCH /api/dispositions/:id — update
 dispositionsRouter.patch('/:id', requirePermission('dispositions:manage'), async (req: Request, res: Response): Promise<void> => {
   try {
+    const id = req.params['id'] as string;
     const { name, description, category, active } = req.body;
     const template = await prisma.dispositionTemplate.update({
-      where: { id: req.params.id },
+      where: { id },
       data: { name, description, category, active },
     });
     res.json(template);
@@ -87,8 +89,9 @@ dispositionsRouter.patch('/:id', requirePermission('dispositions:manage'), async
 // DELETE /api/dispositions/:id — soft delete (set active=false)
 dispositionsRouter.delete('/:id', requirePermission('dispositions:manage'), async (req: Request, res: Response): Promise<void> => {
   try {
+    const id = req.params['id'] as string;
     await prisma.dispositionTemplate.update({
-      where: { id: req.params.id },
+      where: { id },
       data: { active: false },
     });
     res.status(204).send();

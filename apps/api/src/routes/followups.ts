@@ -10,9 +10,9 @@ followupsRouter.use(authenticate);
 // GET /api/followups — list all calls with pending follow-ups
 followupsRouter.get('/', requirePermission('followups:read'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const agentId = req.query.agentId as string | undefined;
-    const from = req.query.from as string | undefined;
-    const to = req.query.to as string | undefined;
+    const agentId = req.query['agentId'] as string | undefined;
+    const from = req.query['from'] as string | undefined;
+    const to = req.query['to'] as string | undefined;
 
     const where: any = {
       followUpDate: { not: null },
@@ -39,7 +39,7 @@ followupsRouter.get('/', requirePermission('followups:read'), async (req: Reques
       orderBy: { followUpDate: 'asc' },
     });
 
-    res.json(followUps.map(c => ({
+    res.json(followUps.map((c: any) => ({
       ...c,
       categoryName: c.category.name,
       agentName: c.agent.name,
@@ -71,7 +71,7 @@ followupsRouter.get('/overdue', requirePermission('followups:read'), async (req:
       orderBy: { followUpDate: 'asc' },
     });
 
-    res.json(overdue.map(c => ({
+    res.json(overdue.map((c: any) => ({
       ...c,
       categoryName: c.category.name,
       agentName: c.agent.name,
@@ -85,7 +85,7 @@ followupsRouter.get('/overdue', requirePermission('followups:read'), async (req:
 // POST /api/followups/:callId — schedule or update a follow-up for a call
 followupsRouter.post('/:callId', requirePermission('followups:manage'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { callId } = req.params;
+    const callId = req.params['callId'] as string;
     const { followUpDate, followUpAssignedTo } = req.body;
 
     if (!followUpDate) {
@@ -103,14 +103,14 @@ followupsRouter.post('/:callId', requirePermission('followups:manage'), async (r
       where: { id: callId },
       data: {
         followUpDate: new Date(followUpDate),
-        followUpAssignedTo: followUpAssignedTo || req.user!.id,
+        followUpAssignedTo: (followUpAssignedTo as string | undefined) || req.user!.id,
       },
       include: {
         category: true,
         agent: { select: { id: true, name: true } },
         followUpAgent: { select: { id: true, name: true } },
       },
-    });
+    }) as any;
 
     await logAudit('FOLLOWUP_SCHEDULED', req.user!.id, callId, `Follow-up scheduled for ${followUpDate}`);
 
@@ -132,7 +132,7 @@ followupsRouter.post('/:callId', requirePermission('followups:manage'), async (r
 // DELETE /api/followups/:callId — remove follow-up from call
 followupsRouter.delete('/:callId', requirePermission('followups:manage'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { callId } = req.params;
+    const callId = req.params['callId'] as string;
     await prisma.call.update({
       where: { id: callId },
       data: { followUpDate: null, followUpAssignedTo: null },
