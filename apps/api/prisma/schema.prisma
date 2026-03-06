@@ -18,10 +18,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  calls         Call[]     @relation("AgentCalls")
-  transferredTo Call[]     @relation("TransferCalls")
-  followUps     Call[]     @relation("FollowUpCalls")
-  auditLogs     AuditLog[]
+  calls           Call[]           @relation("AgentCalls")
+  transferredTo   Call[]           @relation("TransferCalls")
+  followUps       Call[]           @relation("FollowUpCalls")
+  auditLogs       AuditLog[]
+  fileAttachments FileAttachment[]
 }
 
 model Patient {
@@ -36,13 +37,16 @@ model Patient {
   preferredLanguage String   @default("en")
   insuranceProvider String?
   insuranceId       String?
+  ssnEncrypted      String?
   notes             String?
   tags              String   @default("[]") // JSON array stored as string (SQLite)
   active            Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  calls Call[]
+  calls           Call[]
+  auditLogs       AuditLog[]
+  fileAttachments FileAttachment[]
 }
 
 model Category {
@@ -80,22 +84,65 @@ model Call {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  category      Category  @relation(fields: [categoryId], references: [id])
-  agent         User      @relation("AgentCalls", fields: [agentId], references: [id])
-  transferredTo User?     @relation("TransferCalls", fields: [transferredToId], references: [id])
-  followUpAgent User?     @relation("FollowUpCalls", fields: [followUpAssignedTo], references: [id])
-  patient       Patient?  @relation(fields: [patientId], references: [id])
-  auditLogs     AuditLog[]
+  category        Category         @relation(fields: [categoryId], references: [id])
+  agent           User             @relation("AgentCalls", fields: [agentId], references: [id])
+  transferredTo   User?            @relation("TransferCalls", fields: [transferredToId], references: [id])
+  followUpAgent   User?            @relation("FollowUpCalls", fields: [followUpAssignedTo], references: [id])
+  patient         Patient?         @relation(fields: [patientId], references: [id])
+  auditLogs       AuditLog[]
+  fileAttachments FileAttachment[]
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  callId    String?
-  userId    String
-  details   String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  action     String
+  callId     String?
+  patientId  String?
+  userId     String
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  resource   String?
+  createdAt  DateTime @default(now())
 
-  call Call? @relation(fields: [callId], references: [id])
-  user User  @relation(fields: [userId], references: [id])
+  call    Call?    @relation(fields: [callId], references: [id])
+  patient Patient? @relation(fields: [patientId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+}
+
+model DispositionTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  category    String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CallScript {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  content   String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FileAttachment {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  path        String
+  callId      String?
+  patientId   String?
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+
+  call    Call?    @relation(fields: [callId], references: [id])
+  patient Patient? @relation(fields: [patientId], references: [id])
+  uploader User    @relation(fields: [uploadedBy], references: [id])
 }

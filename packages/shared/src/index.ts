@@ -147,6 +147,60 @@ export interface ApiError {
   statusCode: number;
 }
 
+// ── Disposition Template ──
+export interface DispositionTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Call Script ──
+export interface CallScript {
+  id: string;
+  name: string;
+  category: string;
+  content: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Follow-up ──
+export interface FollowUp {
+  callId: string;
+  followUpDate: string;
+  followUpAssignedTo?: string;
+  assignedAgentName?: string;
+}
+
+// ── File Attachment ──
+export interface FileAttachment {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  path: string;
+  callId?: string;
+  patientId?: string;
+  uploadedBy: string;
+  createdAt: string;
+}
+
+// ── Insurance Verification ──
+export interface InsuranceVerification {
+  patientId: string;
+  provider: string;
+  memberId: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'UNKNOWN';
+  coverageType?: string;
+  groupNumber?: string;
+  verifiedAt: string;
+}
+
 // ── RBAC permissions ──
 export const ROLE_HIERARCHY: Record<Role, number> = {
   OWNER: 100,
@@ -172,6 +226,16 @@ export const PERMISSIONS = {
   'users:manage': ['OWNER', 'ADMIN'] as Role[],
   'categories:manage': ['OWNER', 'ADMIN'] as Role[],
   'admin:view': ['OWNER', 'ADMIN'] as Role[],
+  'dispositions:manage': ['OWNER', 'ADMIN', 'SUPERVISOR'] as Role[],
+  'dispositions:read': ['OWNER', 'ADMIN', 'SUPERVISOR', 'AGENT', 'AUDITOR'] as Role[],
+  'scripts:manage': ['OWNER', 'ADMIN', 'SUPERVISOR'] as Role[],
+  'scripts:read': ['OWNER', 'ADMIN', 'SUPERVISOR', 'AGENT', 'AUDITOR'] as Role[],
+  'followups:manage': ['OWNER', 'ADMIN', 'SUPERVISOR', 'AGENT'] as Role[],
+  'followups:read': ['OWNER', 'ADMIN', 'SUPERVISOR', 'AGENT', 'AUDITOR'] as Role[],
+  'files:upload': ['OWNER', 'ADMIN', 'SUPERVISOR', 'AGENT'] as Role[],
+  'files:read': ['OWNER', 'ADMIN', 'SUPERVISOR', 'AGENT', 'AUDITOR'] as Role[],
+  'supervisor:board': ['OWNER', 'ADMIN', 'SUPERVISOR'] as Role[],
+  'audit:read': ['OWNER', 'ADMIN', 'AUDITOR'] as Role[],
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;

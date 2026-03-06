@@ -78,6 +78,22 @@ dashboardRouter.get('/', requirePermission('dashboard:view'), async (req: Reques
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
+    // Calls by disposition
+    const callsByDisposition: Record<string, number> = {};
+    calls.forEach((c) => {
+      if (c.disposition) {
+        callsByDisposition[c.disposition] = (callsByDisposition[c.disposition] || 0) + 1;
+      }
+    });
+
+    // Follow-ups pending
+    const pendingFollowUps = await prisma.call.count({
+      where: { followUpDate: { not: null }, status: { notIn: ['COMPLETED', 'MISSED'] } },
+    });
+    const overdueFollowUps = await prisma.call.count({
+      where: { followUpDate: { not: null, lt: new Date() }, status: { notIn: ['COMPLETED', 'MISSED'] } },
+    });
+
     res.json({
       totalCalls,
       activeCalls,
@@ -90,6 +106,9 @@ dashboardRouter.get('/', requirePermission('dashboard:view'), async (req: Reques
       callsByStatus,
       callsByHour,
       topAgents,
+      callsByDisposition,
+      pendingFollowUps,
+      overdueFollowUps,
     });
   } catch (err) {
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch dashboard', statusCode: 500 });
