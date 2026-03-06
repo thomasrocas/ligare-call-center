@@ -13,6 +13,8 @@ import { scriptsRouter } from './routes/scripts';
 import { followupsRouter } from './routes/followups';
 import { auditRouter } from './routes/audit';
 import { supervisorRouter } from './routes/supervisor';
+import { filesRouter } from './routes/files';
+import { insuranceRouter } from './routes/insurance';
 import { createWsServer } from './ws/wsServer';
 import { errorHandler } from './middleware/error';
 
@@ -41,6 +43,8 @@ app.use('/api/scripts', scriptsRouter);
 app.use('/api/followups', followupsRouter);
 app.use('/api/audit', auditRouter);
 app.use('/api/supervisor', supervisorRouter);
+app.use('/api/files', filesRouter);
+app.use('/api/insurance', insuranceRouter);
 
 // Error handler
 app.use(errorHandler);
