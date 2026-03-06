@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../db';
 import { authenticate, requirePermission } from '../middleware/auth';
 import { logAudit } from '../middleware/audit';
+import { broadcastCallEvent } from '../ws/wsServer';
 import type { CallStatus } from '@ligare/shared';
 
 export const callsRouter = Router();
@@ -101,7 +102,9 @@ callsRouter.post('/', requirePermission('calls:create'), async (req: Request, re
     });
 
     await logAudit('CALL_CREATED', req.user!.id, call.id, `Call created for ${callerName}`);
-    res.status(201).json({ ...call, categoryName: call.category.name, agentName: call.agent.name });
+    const callData = { ...call, categoryName: call.category.name, agentName: call.agent.name };
+    broadcastCallEvent('call:created', callData);
+    res.status(201).json(callData);
   } catch (err) {
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to create call', statusCode: 500 });
   }
@@ -128,7 +131,9 @@ callsRouter.post('/:id/start', requirePermission('calls:start'), async (req: Req
     });
 
     await logAudit('CALL_STARTED', req.user!.id, call.id, 'Call started');
-    res.json({ ...updated, categoryName: updated.category.name, agentName: updated.agent.name });
+    const startedData = { ...updated, categoryName: updated.category.name, agentName: updated.agent.name };
+    broadcastCallEvent('call:started', startedData);
+    res.json(startedData);
   } catch (err) {
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to start call', statusCode: 500 });
   }
@@ -158,7 +163,9 @@ callsRouter.post('/:id/complete', requirePermission('calls:complete'), async (re
     });
 
     await logAudit('CALL_COMPLETED', req.user!.id, call.id, `Duration: ${duration}s`);
-    res.json({ ...updated, categoryName: updated.category.name, agentName: updated.agent.name });
+    const completedData = { ...updated, categoryName: updated.category.name, agentName: updated.agent.name };
+    broadcastCallEvent('call:completed', completedData);
+    res.json(completedData);
   } catch (err) {
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to complete call', statusCode: 500 });
   }
@@ -191,7 +198,9 @@ callsRouter.post('/:id/transfer', requirePermission('calls:transfer'), async (re
     });
 
     await logAudit('CALL_TRANSFERRED', req.user!.id, call.id, `Transferred to ${transferredTo}`);
-    res.json({ ...updated, categoryName: updated.category.name, agentName: updated.agent.name });
+    const transferredData = { ...updated, categoryName: updated.category.name, agentName: updated.agent.name };
+    broadcastCallEvent('call:transferred', transferredData);
+    res.json(transferredData);
   } catch (err) {
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to transfer call', statusCode: 500 });
   }

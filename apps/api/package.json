@@ -14,11 +14,13 @@
   "dependencies": {
     "@ligare/shared": "*",
     "@prisma/client": "^6.19.2",
+    "@types/ws": "^8.18.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "csv-stringify": "^6.5.0",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
+    "ws": "^8.19.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

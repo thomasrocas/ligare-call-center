@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { createServer } from 'http';
 import { authRouter } from './routes/auth';
 import { callsRouter } from './routes/calls';
 import { dashboardRouter } from './routes/dashboard';
@@ -11,9 +12,12 @@ import { dispositionsRouter } from './routes/dispositions';
 import { scriptsRouter } from './routes/scripts';
 import { followupsRouter } from './routes/followups';
 import { auditRouter } from './routes/audit';
+import { supervisorRouter } from './routes/supervisor';
+import { createWsServer } from './ws/wsServer';
 import { errorHandler } from './middleware/error';
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
@@ -36,14 +40,18 @@ app.use('/api/dispositions', dispositionsRouter);
 app.use('/api/scripts', scriptsRouter);
 app.use('/api/followups', followupsRouter);
 app.use('/api/audit', auditRouter);
+app.use('/api/supervisor', supervisorRouter);
 
 // Error handler
 app.use(errorHandler);
 
+// Attach WebSocket server to the HTTP server
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  createWsServer(httpServer);
+  httpServer.listen(PORT, () => {
     console.log(`🔧 Ligare API running on http://localhost:${PORT}`);
+    console.log(`🔌 WebSocket server running on ws://localhost:${PORT}/ws`);
   });
 }
 
-export { app };
+export { app, httpServer };
