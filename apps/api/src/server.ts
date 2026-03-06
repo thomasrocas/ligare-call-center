@@ -10,6 +10,7 @@ import { patientsRouter } from './routes/patients';
 import { dispositionsRouter } from './routes/dispositions';
 import { scriptsRouter } from './routes/scripts';
 import { followupsRouter } from './routes/followups';
+import { auditRouter } from './routes/audit';
 import { errorHandler } from './middleware/error';
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/patients', patientsRouter);
 app.use('/api/dispositions', dispositionsRouter);
 app.use('/api/scripts', scriptsRouter);
 app.use('/api/followups', followupsRouter);
+app.use('/api/audit', auditRouter);
 
 // Error handler
 app.use(errorHandler);

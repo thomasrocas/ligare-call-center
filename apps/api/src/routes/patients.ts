@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../db';
 import { authenticate, requirePermission } from '../middleware/auth';
+import { logPhiAccess } from '../middleware/audit';
+import { encrypt, decrypt, maskSensitive } from '../lib/crypto';
 
 export const patientsRouter = Router();
 
@@ -43,6 +45,8 @@ patientsRouter.get('/', requirePermission('calls:read'), async (req: Request, re
         ...p,
         tags: JSON.parse(p.tags),
         callCount: p._count.calls,
+        ssnEncrypted: undefined, // never expose encrypted SSN in list view
+        hasSsn: !!p.ssnEncrypted,
       })),
       total,
       page,
@@ -58,6 +62,8 @@ patientsRouter.get('/', requirePermission('calls:read'), async (req: Request, re
 patientsRouter.get('/:id', requirePermission('calls:read'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
+    const includePhiDetails = req.query.phi === 'true';
+
     const patient = await prisma.patient.findUnique({
       where: { id },
       include: {
@@ -77,7 +83,10 @@ patientsRouter.get('/:id', requirePermission('calls:read'), async (req: Request,
       return;
     }
 
-    res.json({
+    // Log PHI access
+    await logPhiAccess('PHI_READ_PATIENT', req.user!.id, patient.id, `Patient detail accessed`, req);
+
+    const responseData: any = {
       ...patient,
       tags: JSON.parse(patient.tags),
       calls: patient.calls.map((c) => ({
@@ -85,7 +94,27 @@ patientsRouter.get('/:id', requirePermission('calls:read'), async (req: Request,
         categoryName: c.category.name,
         agentName: c.agent.name,
       })),
-    });
+      ssnEncrypted: undefined,
+      hasSsn: !!patient.ssnEncrypted,
+    };
+
+    // If PHI details requested and user has appropriate role, reveal masked SSN
+    if (includePhiDetails && ['OWNER', 'ADMIN', 'SUPERVISOR'].includes(req.user!.role)) {
+      if (patient.ssnEncrypted) {
+        try {
+          const ssn = decrypt(patient.ssnEncrypted);
+          responseData.ssnMasked = maskSensitive(ssn);
+          await logPhiAccess('PHI_READ_SSN', req.user!.id, patient.id, 'SSN accessed (masked)', req);
+        } catch {
+          // decryption failed
+        }
+      }
+      if (patient.insuranceId) {
+        await logPhiAccess('PHI_READ_INSURANCE', req.user!.id, patient.id, 'Insurance ID accessed', req);
+      }
+    }
+
+    res.json(responseData);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch patient', statusCode: 500 });
@@ -95,7 +124,7 @@ patientsRouter.get('/:id', requirePermission('calls:read'), async (req: Request,
 // POST /api/patients — create patient
 patientsRouter.post('/', requirePermission('calls:create'), async (req: Request, res: Response): Promise<void> => {
   try {
-    const { mrn, firstName, lastName, dob, phone, phoneAlt, email, preferredLanguage, insuranceProvider, insuranceId, notes, tags } = req.body;
+    const { mrn, firstName, lastName, dob, phone, phoneAlt, email, preferredLanguage, insuranceProvider, insuranceId, ssn, notes, tags } = req.body;
 
     if (!mrn || !firstName || !lastName || !phone) {
       res.status(400).json({ error: 'Bad Request', message: 'mrn, firstName, lastName, and phone are required', statusCode: 400 });
@@ -120,12 +149,13 @@ patientsRouter.post('/', requirePermission('calls:create'), async (req: Request,
         preferredLanguage: preferredLanguage || 'en',
         insuranceProvider: insuranceProvider || null,
         insuranceId: insuranceId || null,
+        ssnEncrypted: ssn ? encrypt(ssn) : null,
         notes: notes || null,
         tags: JSON.stringify(tags || []),
       },
     });
 
-    res.status(201).json({ ...patient, tags: JSON.parse(patient.tags) });
+    res.status(201).json({ ...patient, tags: JSON.parse(patient.tags), ssnEncrypted: undefined, hasSsn: !!patient.ssnEncrypted });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to create patient', statusCode: 500 });
@@ -136,7 +166,7 @@ patientsRouter.post('/', requirePermission('calls:create'), async (req: Request,
 patientsRouter.patch('/:id', requirePermission('calls:create'), async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { firstName, lastName, dob, phone, phoneAlt, email, preferredLanguage, insuranceProvider, insuranceId, notes, tags, active } = req.body;
+    const { firstName, lastName, dob, phone, phoneAlt, email, preferredLanguage, insuranceProvider, insuranceId, ssn, notes, tags, active } = req.body;
 
     const data: any = {};
     if (firstName !== undefined) data.firstName = firstName;
@@ -148,12 +178,13 @@ patientsRouter.patch('/:id', requirePermission('calls:create'), async (req: Requ
     if (preferredLanguage !== undefined) data.preferredLanguage = preferredLanguage;
     if (insuranceProvider !== undefined) data.insuranceProvider = insuranceProvider;
     if (insuranceId !== undefined) data.insuranceId = insuranceId;
+    if (ssn !== undefined) data.ssnEncrypted = ssn ? encrypt(ssn) : null;
     if (notes !== undefined) data.notes = notes;
     if (tags !== undefined) data.tags = JSON.stringify(tags);
     if (active !== undefined) data.active = active;
 
     const patient = await prisma.patient.update({ where: { id }, data });
-    res.json({ ...patient, tags: JSON.parse(patient.tags) });
+    res.json({ ...patient, tags: JSON.parse(patient.tags), ssnEncrypted: undefined, hasSsn: !!patient.ssnEncrypted });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error', message: 'Failed to update patient', statusCode: 500 });
@@ -180,6 +211,8 @@ patientsRouter.get('/lookup/:phone', requirePermission('calls:read'), async (req
       ...p,
       tags: JSON.parse(p.tags),
       callCount: p._count.calls,
+      ssnEncrypted: undefined,
+      hasSsn: !!p.ssnEncrypted,
     })));
   } catch (err) {
     console.error(err);
@@ -228,6 +261,7 @@ patientsRouter.post('/import', requirePermission('users:manage'), async (req: Re
           preferredLanguage: row.preferredLanguage || 'en',
           insuranceProvider: row.insuranceProvider ? String(row.insuranceProvider).trim() : null,
           insuranceId: row.insuranceId ? String(row.insuranceId).trim() : null,
+          ssnEncrypted: row.ssn ? encrypt(String(row.ssn)) : null,
           notes: row.notes ? String(row.notes).trim() : null,
           tags: JSON.stringify(row.tags || []),
         };

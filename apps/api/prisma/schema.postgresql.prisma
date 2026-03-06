@@ -1,0 +1,68 @@
+/**
+ * PostgreSQL variant of the Prisma schema.
+ * 
+ * To switch to PostgreSQL:
+ * 1. Set DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public" in .env
+ * 2. Replace schema.prisma datasource block with the one below
+ * 3. Run: npx prisma migrate dev
+ * 
+ * Note: The `tags` field uses Json type in PostgreSQL vs String in SQLite.
+ * Update the model below accordingly.
+ */
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// All models are identical to schema.prisma except:
+// - Patient.tags: Json @default("[]") instead of String @default("[]")
+// - DateTime fields can use @db.Timestamptz for timezone-aware storage
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("AGENT")
+  team      String   @default("HH")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  calls           Call[]           @relation("AgentCalls")
+  transferredTo   Call[]           @relation("TransferCalls")
+  followUps       Call[]           @relation("FollowUpCalls")
+  auditLogs       AuditLog[]
+  fileAttachments FileAttachment[]
+}
+
+model Patient {
+  id                String    @id @default(cuid())
+  mrn               String    @unique
+  firstName         String
+  lastName          String
+  dob               DateTime? @db.Timestamptz
+  phone             String
+  phoneAlt          String?
+  email             String?
+  preferredLanguage String    @default("en")
+  insuranceProvider String?
+  insuranceId       String?
+  ssnEncrypted      String?
+  notes             String?
+  tags              Json      @default("[]")  // Postgres uses Json type
+  active            Boolean   @default(true)
+  createdAt         DateTime  @default(now()) @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @db.Timestamptz
+
+  calls           Call[]
+  auditLogs       AuditLog[]
+  fileAttachments FileAttachment[]
+}
+
+// ... (rest of models identical to schema.prisma with @db.Timestamptz for DateTime fields)
