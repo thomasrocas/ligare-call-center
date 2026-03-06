@@ -1,18 +1,11 @@
-// Set env BEFORE any imports
-process.env.NODE_ENV = 'test';
-
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { app } from '../server';
+import { prisma } from '../db';
 
-// Use a simple supertest-like approach with fetch
-const BASE = 'http://127.0.0.1:0'; // not used directly, we use app
 let server: any;
 let port: number;
-
-const prisma = new PrismaClient();
 
 const JWT_SECRET = 'ligare-dev-secret-change-in-production';
 
@@ -43,9 +36,10 @@ async function req(method: string, path: string, token?: string, body?: any) {
 }
 
 beforeAll(async () => {
-  // Reset DB
+  // Reset DB (children before parents)
   await prisma.$executeRawUnsafe('DELETE FROM "AuditLog"');
   await prisma.$executeRawUnsafe('DELETE FROM "Call"');
+  await prisma.$executeRawUnsafe('DELETE FROM "Patient"');
   await prisma.$executeRawUnsafe('DELETE FROM "User"');
   await prisma.$executeRawUnsafe('DELETE FROM "Category"');
 

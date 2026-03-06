@@ -30,10 +30,10 @@ async function req(method: string, path: string, token?: string, body?: any) {
 }
 
 beforeAll(async () => {
-  // Clean tables
-  await prisma.patient.deleteMany();
+  // Clean tables (children before parents to respect FK constraints)
   await prisma.auditLog.deleteMany();
   await prisma.call.deleteMany();
+  await prisma.patient.deleteMany();
   await prisma.user.deleteMany();
   await prisma.category.deleteMany();
 
